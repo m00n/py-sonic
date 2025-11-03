@@ -18,14 +18,21 @@ along with py-sonic.  If not, see <http://www.gnu.org/licenses/>
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import BinaryIO
+from typing import Any, BinaryIO, final
 
-from libsonic.errors import *
+from pydantic import BaseModel
+
+from libsonic.errors import (
+    ArgumentError,
+    CredentialError,
+    getExcByCode,
+)
 from libsonic import models
 from netrc import netrc
 from hashlib import md5
 import urllib.request
 import urllib.error
+import urllib.parse
 from http import client as http_client
 from urllib.parse import urlencode
 from io import StringIO
@@ -42,6 +49,7 @@ API_VERSION = "1.16.1"
 logger = logging.getLogger(__name__)
 
 
+@final
 class Connection(object):
     def __init__(
         self,
@@ -465,7 +473,7 @@ class Connection(object):
 
         req = self._getRequest(viewName, {"id": mid})
         res = self._doInfoReq(req)
-        return self._validateResponse(res, models.IndexesResponse)
+        return self._validateResponse(res, models.MusicDirectoryResponse)
 
     def search(
         self,
@@ -512,7 +520,7 @@ class Connection(object):
 
         req = self._getRequest(viewName, q)
         res = self._doInfoReq(req)
-        return self._validateResponse(res, models.MusicDirectoryResponse)
+        return self._validateResponse(res, models.SearchResult2Response)
 
     def search2(
         self,
@@ -761,7 +769,7 @@ class Connection(object):
         self,
         playlistId: str | None = None,
         name: str | None = None,
-        songIds: list[str] = [],
+        songIds: list[str] | None = None,
     ) -> models.StatusResponse:
         """
         since: 1.2.0
@@ -781,10 +789,13 @@ class Connection(object):
          u'version': u'1.5.0',
          u'xmlns': u'http://subsonic.org/restapi'}
         """
+        if songIds is None:
+            songIds = []
+
         methodName = "createPlaylist"
         viewName = "%s.view" % methodName
 
-        if playlistId == name == None:
+        if playlistId is name is None:
             raise ArgumentError("You must supply either a playlistId or a name")
         if playlistId is not None and name is not None:
             raise ArgumentError(
@@ -795,7 +806,7 @@ class Connection(object):
 
         req = self._getRequestWithList(viewName, "songId", songIds, q)
         res = self._doInfoReq(req)
-        return self._validateResponse(res, models.PlaylistResponse)
+        return self._validateResponse(res, models.StatusResponse)
 
     def deletePlaylist(self, pid: str) -> models.StatusResponse:
         """
@@ -1523,7 +1534,7 @@ class Connection(object):
         self,
         action: str,
         index: int | None = None,
-        sids: list[str] = [],
+        sids: list[str] | None = None,
         gain: float | None = None,
         offset: int | None = None,
     ) -> models.StatusResponse:
@@ -1552,6 +1563,9 @@ class Connection(object):
         offset:int      (added in API 1.7.0) Used by "skip".  Start playing
                         this many seconds into the track.
         """
+        if sids is None:
+            sids = []
+
         methodName = "jukeboxControl"
         viewName = "%s.view" % methodName
 
@@ -1562,10 +1576,10 @@ class Connection(object):
         req = None
         if action == "add":
             # We have to deal with the sids
-            if not (isinstance(sids, list) or isinstance(sids, tuple)):
-                raise ArgumentError(
-                    'If you are adding songs, "sids" must be a list or tuple!'
-                )
+            # if not (isinstance(sids, list) or isinstance(sids, tuple)):
+            #     raise ArgumentError(
+            #         'If you are adding songs, "sids" must be a list or tuple!'
+            #     )
             req = self._getRequestWithList(viewName, "id", sids, q)
         else:
             req = self._getRequest(viewName, q)
@@ -1675,7 +1689,7 @@ class Connection(object):
 
     def createShare(
         self,
-        shids: list[str] = [],
+        shids: list[str] | None = None,
         description: str | None = None,
         expires: int | None = None,
     ) -> models.StatusResponse:
@@ -1699,6 +1713,9 @@ class Connection(object):
         This returns a structure like you would get back from getShares()
         containing just your new share.
         """
+        if shids is None:
+            shids = []
+
         methodName = "createShare"
         viewName = "%s.view" % methodName
 
@@ -1726,7 +1743,7 @@ class Connection(object):
         viewName = "%s.view" % methodName
 
         q = self._getQueryDict(
-            {"id": shid, "description": description, expires: self._ts2milli(expires)}
+            {"id": shid, "description": description, "expires": self._ts2milli(expires)}
         )
 
         req = self._getRequest(viewName, q)
@@ -1769,7 +1786,7 @@ class Connection(object):
 
         try:
             rating = int(rating)
-        except:
+        except ValueError:
             raise ArgumentError(
                 "Rating must be an integer between 0 and 5: %r" % rating
             )
@@ -2092,8 +2109,8 @@ class Connection(object):
         lid: str,
         name: str | None = None,
         comment: str | None = None,
-        songIdsToAdd: list[str] = [],
-        songIndexesToRemove: list[int] = [],
+        songIdsToAdd: list[str] | None = None,
+        songIndexesToRemove: list[int] | None = None,
     ) -> models.StatusResponse:
         """
         since 1.8.0
@@ -2112,6 +2129,11 @@ class Connection(object):
 
         Returns a normal status response dict
         """
+        if songIdsToAdd is None:
+            songIdsToAdd = []
+        if songIndexesToRemove is None:
+            songIndexesToRemove = []
+
         methodName = "updatePlaylist"
         viewName = "%s.view" % methodName
 
@@ -2157,7 +2179,10 @@ class Connection(object):
         return res
 
     def star(
-        self, sids: list[str] = [], albumIds: list[str] = [], artistIds: list[str] = []
+        self,
+        sids: list[str] | None = None,
+        albumIds: list[str] | None = None,
+        artistIds: list[str] | None = None,
     ) -> models.StatusResponse:
         """
         since 1.8.0
@@ -2176,6 +2201,13 @@ class Connection(object):
 
         Returns a normal status response dict
         """
+        if sids is None:
+            sids = []
+        if albumIds is None:
+            albumIds = []
+        if artistIds is None:
+            artistIds = []
+
         methodName = "star"
         viewName = "%s.view" % methodName
 
@@ -2191,7 +2223,10 @@ class Connection(object):
         return self._validateResponse(res, models.StatusResponse)
 
     def unstar(
-        self, sids: list[str] = [], albumIds: list[str] = [], artistIds: list[str] = []
+        self,
+        sids: list[str] | None = None,
+        albumIds: list[str] | None = None,
+        artistIds: list[str] | None = None,
     ) -> models.StatusResponse:
         """
         since 1.8.0
@@ -2211,6 +2246,13 @@ class Connection(object):
 
         Returns a normal status response dict
         """
+        if sids is None:
+            sids = []
+        if albumIds is None:
+            albumIds = []
+        if artistIds is None:
+            artistIds = []
+
         methodName = "unstar"
         viewName = "%s.view" % methodName
 
@@ -2801,7 +2843,7 @@ class Connection(object):
         self._checkStatus(res)
         return res
 
-    def _unsupportedAPIFunction(self, methodName):
+    def _unsupportedAPIFunction(self, methodName: str) -> bool:
         """
         base function to call unsupported API methods
 
@@ -2826,10 +2868,14 @@ class Connection(object):
     #
     # Private internal methods
     #
-    def _getOpener(self, username, passwd):
+    def _getOpener(
+        self, username: str | None, passwd: str | None
+    ) -> urllib.request.OpenerDirector:
         return urllib.request.build_opener()
 
-    def _getQueryDict(self, d: Mapping[str, str | int | None]):
+    def _getQueryDict(
+        self, d: dict[str, str | int | float | None]
+    ) -> dict[str, str | int | float | None]:
         """
         Given a dictionary, it cleans out all the values set to None
         """
@@ -2838,7 +2884,7 @@ class Connection(object):
                 del d[k]
         return d
 
-    def _getBaseQdict(self):
+    def _getBaseQdict(self) -> dict[str, str | None]:
         qdict = {
             "f": "json",
             "v": self._apiVersion,
@@ -2865,8 +2911,11 @@ class Connection(object):
         return qdict
 
     def _getRequest(
-        self, viewName: str, query: Mapping[str, str] = {}
+        self, viewName: str, query: Mapping[str, str | int | None] | None = None
     ) -> urllib.request.Request:
+        if query is None:
+            query = {}
+
         qdict = self._getBaseQdict()
         qdict.update(query)
         url = "%s:%d/%s/%s" % (self._baseUrl, self._port, self._serverPath, viewName)
@@ -2882,12 +2931,19 @@ class Connection(object):
         return req
 
     def _getRequestWithList(
-        self, viewName: str, listName: str, alist: list[str], query={}
-    ):
+        self,
+        viewName: str,
+        listName: str,
+        alist: list[str],
+        query: dict[str, Any] | None = None,
+    ) -> urllib.request.Request:
         """
         Like _getRequest, but allows appending a number of items with the
         same key (listName).  This bypasses the limitation of urlencode()
         """
+        if query is None:
+            query = {}
+
         qdict = self._getBaseQdict()
         qdict.update(query)
         url = "%s:%d/%s/%s" % (self._baseUrl, self._port, self._serverPath, viewName)
@@ -2906,7 +2962,12 @@ class Connection(object):
 
         return req
 
-    def _getRequestWithLists(self, viewName, listMap, query={}):
+    def _getRequestWithLists(
+        self,
+        viewName: str,
+        listMap: dict[str, list[str | int]],
+        query: dict[str, Any] | None = None,
+    ) -> urllib.request.Request:
         """
         Like _getRequestWithList(), but you must pass a dictionary
         that maps the listName to the list.  This allows for multiple
@@ -2916,6 +2977,9 @@ class Connection(object):
         listMap:dict        A mapping of listName to a list of entries
         query:dict          The normal query dict
         """
+        if query is None:
+            query = {}
+
         qdict = self._getBaseQdict()
         qdict.update(query)
         url = "%s:%d/%s/%s" % (self._baseUrl, self._port, self._serverPath, viewName)
@@ -2935,13 +2999,13 @@ class Connection(object):
 
         return req
 
-    def _doInfoReq(self, req: urllib.request.Request) -> object:
+    def _doInfoReq(self, req: urllib.request.Request) -> dict[str, Any]:
         # Returns a parsed dictionary version of the result
         res = self._opener.open(req)
         dres = json.loads(res.read().decode("utf-8"))
         return dres["subsonic-response"]
 
-    def _doBinReq(self, req):
+    def _doBinReq(self, req: urllib.request.Request) -> dict[str, Any] | BinaryIO:
         res = self._opener.open(req)
         info = res.info()
         if hasattr(info, "getheader"):
@@ -2957,14 +3021,16 @@ class Connection(object):
                 return dres["subsonic-response"]
         return res
 
-    def _checkStatus(self, result):
+    def _checkStatus(self, result: dict[str, Any]) -> bool:
         if result["status"] == "ok":
             return True
         elif result["status"] == "failed":
             exc = getExcByCode(result["error"]["code"])
             raise exc(result["error"]["message"])
 
-    def _validateResponse[T](self, result: object, model_class: type[T]) -> T:
+    def _validateResponse[T: BaseModel](
+        self, result: object, model_class: type[T]
+    ) -> T:
         """
         Validates a Subsonic API response using Pydantic models
 
@@ -2975,7 +3041,7 @@ class Connection(object):
         Raises an exception if the status is failed
         """
         self._checkStatus(result)
-        return model_class(**result)
+        return model_class.model_validate(result)
 
     def _hexEnc(self, raw: str) -> str:
         """
@@ -3004,7 +3070,9 @@ class Connection(object):
         """
         return urllib.parse.splithost(self._serverPath)[1].split("/")[0]
 
-    def _fixLastModified(self, data):
+    def _fixLastModified(
+        self, data: dict[str, Any] | list[Any] | tuple[Any, ...]
+    ) -> None:
         """
         This will recursively walk through a data structure and look for
         a dict key/value pair where the key is "lastModified" and change
@@ -3023,7 +3091,7 @@ class Connection(object):
                 if isinstance(item, (list, tuple, dict)):
                     return self._fixLastModified(item)
 
-    def _process_netrc(self, use_netrc):
+    def _process_netrc(self, use_netrc: str | bool) -> None:
         """
         The use_netrc var is either a boolean, which means we should use
         the user's default netrc, or a string specifying a path to a
@@ -3036,8 +3104,8 @@ class Connection(object):
         if not use_netrc:
             raise CredentialError(
                 'useNetrc must be either a boolean "True" '
-                "or a string representing a path to a netrc file, "
-                "not {0}".format(repr(use_netrc))
+                + "or a string representing a path to a netrc file, "
+                + "not {0}".format(repr(use_netrc))
             )
         if isinstance(use_netrc, bool) and use_netrc:
             self._netrc = netrc()
@@ -3056,6 +3124,6 @@ class Connection(object):
         self._username = auth[0]
         self._rawPass = auth[2]
 
-    def _getSalt(self, length=12):
+    def _getSalt(self, length: int = 12) -> str:
         salt = md5(os.urandom(100)).hexdigest()
         return salt[:length]
