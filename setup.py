@@ -21,35 +21,36 @@ from setuptools import setup
 from libsonic import __version__ as version
 import os
 
-req_file = os.path.join(os.path.dirname(__file__), 'requirements.txt')
+req_file = os.path.join(os.path.dirname(__file__), "requirements.txt")
 requirements = [line for line in open(req_file) if line]
 
-setup(name='py-sonic',
+setup(
+    name="py-sonic2",
     version=version,
-    author='Jay Deiman',
-    author_email='admin@splitstreams.com',
-    url='http://stuffivelearned.org',
-    description='A python wrapper library for the Subsonic REST API.  '
-        'http://subsonic.org',
-    long_description='This is a basic wrapper library for the Subsonic '
-        'REST API. This will allow you to connect to your server and retrieve '
-        'information and have it returned in basic Python types.',
-    packages=['libsonic'],
-    package_dir={'libsonic': 'libsonic'},
+    author="Yannick Schäfer",
+    author_email="mail@m00n.dev",
+    url="https://github.com/m00n/py-sonic",
+    description="A python wrapper library for the Subsonic REST API.  "
+    "http://subsonic.org",
+    long_description="This is a basic wrapper library for the Subsonic "
+    "REST API. This will allow you to connect to your server and retrieve "
+    "information and have it returned in basic Python types.",
+    packages=["libsonic"],
+    package_dir={"libsonic": "libsonic"},
     install_requires=requirements,
-    python_requires='>=3',
+    python_requires=">=3",
     classifiers=[
-        'Development Status :: 4 - Beta',
-        'Intended Audience :: System Administrators',
-        'Intended Audience :: Information Technology',
-        'License :: OSI Approved :: GNU General Public License (GPL)',
-        'Natural Language :: English',
-        'Operating System :: POSIX',
-        'Programming Language :: Python',
-        'Topic :: System :: Systems Administration',
-        'Topic :: Internet :: WWW/HTTP',
-        'Topic :: Software Development :: Libraries :: Python Modules',
-        'Topic :: Software Development :: Libraries',
-        'Topic :: System',
-    ]
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: System Administrators",
+        "Intended Audience :: Information Technology",
+        "License :: OSI Approved :: GNU General Public License (GPL)",
+        "Natural Language :: English",
+        "Operating System :: POSIX",
+        "Programming Language :: Python",
+        "Topic :: System :: Systems Administration",
+        "Topic :: Internet :: WWW/HTTP",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+        "Topic :: Software Development :: Libraries",
+        "Topic :: System",
+    ],
 )
