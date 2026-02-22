@@ -1,5 +1,7 @@
 # py-sonic
 
+This is forked from [crustymonkey/py-sonic](https://github.com/crustymonkey/py-sonic) with added pydantic / typing support. Some AI slop involved. I'm very sorry.
+
 A Python wrapper library for the Subsonic REST API.
 
 ## Installation
@@ -21,12 +23,13 @@ pip install .
 ## Usage
 
 This library follows the Subsonic REST API. For detailed API documentation, see:
+
 - [Subsonic API Documentation](http://www.subsonic.org/pages/api.jsp)
 - Python documentation: `pydoc libsonic.connection`
 
 ## Basic Tutorial
 
-This is about as basic as it gets.  We are just going to set up the connection
+This is about as basic as it gets. We are just going to set up the connection
 and then get a couple of random songs.
 
 ```python
@@ -37,7 +40,7 @@ import libsonic
 
 # We pass in the base url, the username, password, and port number
 # Be sure to use https:// if this is an ssl connection!
-conn = libsonic.Connection('https://music.example.com' , 'myuser' , 
+conn = libsonic.Connection('https://music.example.com' , 'myuser' ,
     'secretpass' , port=443)
 # Let's get 2 completely random songs
 songs = conn.getRandomSongs(size=2)
@@ -45,7 +48,7 @@ songs = conn.getRandomSongs(size=2)
 pprint(songs)
 ```
 
-As you can see, it's really pretty simple.  If you use the documentation 
+As you can see, it's really pretty simple. If you use the documentation
 provided in the library:
 
     pydoc libsonic.connection
@@ -53,11 +56,11 @@ provided in the library:
 or the api docs on subsonic.org (listed above), you should be able to make use
 of your server without too much trouble.
 
-Right now, only plain old dictionary structures are returned.  The plan
+Right now, only plain old dictionary structures are returned. The plan
 for a later release includes the following:
 
-* Proper object representations for Artist, Album, Song, etc.
-* Lazy access of members (the song objects aren't created until you want to
+- Proper object representations for Artist, Album, Song, etc.
+- Lazy access of members (the song objects aren't created until you want to
   do something with them)
 
 ## Development
