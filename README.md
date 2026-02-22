@@ -1,26 +1,30 @@
-# py-sonic #
-## INSTALL ##
+# py-sonic
 
-Installation is fairly simple.  Just do the standard install as root:
+A Python wrapper library for the Subsonic REST API.
 
-    tar -xvzf py-sonic-*.tar.gz
-    cd py-sonic-*
-    python setup.py install
+## Installation
 
-You can also install directly using *pip* or *easy_install*
+Install from PyPI using pip:
 
-    pip install py-sonic
+```bash
+pip install py-sonic2
+```
 
-## USAGE ##
+Or install from source:
 
-This library follows the REST API almost exactly (for now).  If you follow the 
-documentation on http://www.subsonic.org/pages/api.jsp or you do a:
+```bash
+git clone https://github.com/m00n/py-sonic.git
+cd py-sonic
+pip install .
+```
 
-    pydoc libsonic.connection
+## Usage
 
-I have also added documentation at http://stuffivelearned.org/doku.php?id=programming:python:py-sonic
+This library follows the Subsonic REST API. For detailed API documentation, see:
+- [Subsonic API Documentation](http://www.subsonic.org/pages/api.jsp)
+- Python documentation: `pydoc libsonic.connection`
 
-## BASIC TUTORIAL ##
+## Basic Tutorial
 
 This is about as basic as it gets.  We are just going to set up the connection
 and then get a couple of random songs.
@@ -49,9 +53,50 @@ provided in the library:
 or the api docs on subsonic.org (listed above), you should be able to make use
 of your server without too much trouble.
 
-Right now, only plain old dictionary structures are returned.  The plan 
+Right now, only plain old dictionary structures are returned.  The plan
 for a later release includes the following:
 
 * Proper object representations for Artist, Album, Song, etc.
 * Lazy access of members (the song objects aren't created until you want to
   do something with them)
+
+## Development
+
+### Building and Publishing
+
+This project includes a Makefile for easy building and publishing:
+
+```bash
+# View all available commands
+make help
+
+# Build the package
+make build
+
+# Run full release workflow
+make release
+
+# Upload to TestPyPI
+make upload-test
+
+# Upload to PyPI
+make upload
+```
+
+For detailed instructions, see [PYPI_RELEASE.md](PYPI_RELEASE.md).
+
+### CI/CD
+
+This project uses GitLab CI/CD for automated testing and publishing. The pipeline includes:
+
+- **Testing** across Python 3.8-3.13
+- **Code quality** checks with ruff
+- **Security scanning** with safety and bandit
+- **Automated building** of distributions
+- **Publishing** to TestPyPI and PyPI
+
+For CI/CD setup and configuration, see [CI_CD.md](CI_CD.md).
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
