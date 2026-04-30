@@ -2766,7 +2766,7 @@ class Connection(object):
 
         Returns True if refresh successful, False otherwise
         """
-        view_name = "scanNow"
+        method_name = "scanNow"
         return self._unsupported_api_function(method_name)
 
     def cleanup_database(self):
